@@ -31,9 +31,7 @@ class BuildDatasetFlow(FlowSpec):
     @step
     def start(self):
         """
-        The start step:
-        1) Read the list of files to build the dataset from.
-        2) Build the connectivity matrix shared by all data row.
+        Purge the data/processed directory, and create the list of files (use-case based) to load the data for.
         """
         
         os.makedirs(config.processed_dir, exist_ok=True)
@@ -79,7 +77,7 @@ class BuildDatasetFlow(FlowSpec):
     @step
     def load_data(self):
         """
-        Build and save the graphs, in PyTorch format, in parallel by branching the flow. If data augmentation is enabled, this step will generated random crops (of size kernel_size) of the original tensor for a random number of times. If disabled, it will return a single graph containing all nodes in the original data.
+        For each use-case, load the data flavors (tensors, invariants and labels) into a NumPy array.
         """
         
         self.tensors = np.load(os.path.join(config.raw_dir, config.dataset, f'{config.dataset}_{self.input}_Tensors.npy'))
@@ -97,7 +95,7 @@ class BuildDatasetFlow(FlowSpec):
     @step
     def join(self, inputs):
         """
-        Join the parallel branches.
+        Join the parallel branches, stack the previously loaded files, and save into a single output file for each of the data flavor.
         """
         
         # merge

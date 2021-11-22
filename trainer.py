@@ -20,34 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import names
-import os
-import os.path as osp
-    
-root_path = osp.join(osp.dirname(osp.realpath(__file__)), 'data')
-raw_dir = osp.join(root_path, 'raw')
-processed_dir = osp.join(root_path, 'processed')
+import config
+import data
+import model
+from pytorch_lightning.utilities.cli import LightningCLI
+import torch
 
-purge = True
-dataset = 'kepsilon'
+torch.set_default_dtype(torch.double)
 
-name = names.get_last_name().lower()
-
-data_path = osp.join(root_path, 'data')
-
-experiments_path = osp.join(root_path, 'experiments')
-experiment_path = osp.join(experiments_path, name)
-logs_path = osp.join(experiment_path, 'logs')
-artifacts_path = osp.join(experiment_path, 'artifacts')
-plots_path = osp.join(experiment_path, 'plots')
-
-paths = [experiments_path,
-         experiment_path, 
-         logs_path, 
-         artifacts_path, 
-         plots_path]
-
-for path in paths:
-    os.makedirs(path, exist_ok=True)
-    
-batch_size = 128
+cli = LightningCLI(model_class=model.LitMLP, 
+                   datamodule_class=data.LitDataset)

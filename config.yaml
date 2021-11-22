@@ -1,0 +1,4 @@
+fit:
+    trainer:
+        max_epochs: 1000
+        batch_size: 128
