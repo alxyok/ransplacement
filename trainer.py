@@ -23,10 +23,21 @@
 import config
 import data
 import model
+import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import LightningCLI
 import torch
 
 torch.set_default_dtype(torch.double)
 
+class LitTrainer(pl.Trainer):
+    
+    def __init__(self, accelerator='cpu'):
+        logger = pl.loggers.TensorBoardLogger(config.logs_path, name=None, log_graph=True)
+        
+        super().__init__(
+            default_root_dir=config.logs_path,
+            logger=logger)
+
 cli = LightningCLI(model_class=model.LitMLP, 
-                   datamodule_class=data.LitDataset)
+                   datamodule_class=data.LitDataModule,
+                   trainer_class=LitTrainer)

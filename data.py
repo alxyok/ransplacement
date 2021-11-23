@@ -42,17 +42,15 @@ class Dataset(torch.utils.data.Dataset):
         return len(self.tensors)
     
     def __getitem__(self, idx):
-        rowar = (1, -1)
         
-        t = torch.tensor(self.tensors[idx, :]).reshape(rowar)
-        i = torch.tensor(self.invariants[idx, :]).reshape(rowar)
-        l = torch.tensor(self.labels[idx, :]).reshape(rowar)
+        t = torch.tensor(self.tensors[idx, :])
+        i = torch.tensor(self.invariants[idx, :])
+        l = torch.tensor(self.labels[idx, :])
         
-        stacked = torch.hstack((t, i, l))
-        return stacked
+        return t, i, l
     
 
-class LitDataset(pl.LightningDataModule):
+class LitDataModule(pl.LightningDataModule):
     
     def __init__(self, batch_size: int = 128):
         super().__init__()
@@ -71,10 +69,17 @@ class LitDataset(pl.LightningDataModule):
         dataset = Dataset(self.batch_size)
         
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return torch.utils.data.DataLoader(self.train_dataset, 
+                                           batch_size=self.batch_size, 
+                                           shuffle=True,
+                                           collate_fn=lambda batch: batch)
     
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.val_dataset, 
+                                           batch_size=self.batch_size,
+                                           collate_fn=lambda batch: batch)
     
     def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.test_dataset, 
+                                           batch_size=self.batch_size,
+                                           collate_fn=lambda batch: batch)

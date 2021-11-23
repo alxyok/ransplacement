@@ -24,16 +24,15 @@ import names
 import os
 import os.path as osp
     
-root_path = osp.join(osp.dirname(osp.realpath(__file__)), 'data')
-raw_dir = osp.join(root_path, 'raw')
-processed_dir = osp.join(root_path, 'processed')
+root_path = osp.join(osp.dirname(osp.realpath(__file__)))
+data_path = osp.join(root_path, 'data')
+raw_dir = osp.join(data_path, 'raw')
+processed_dir = osp.join(data_path, 'processed')
 
 purge = True
 dataset = 'kepsilon'
 
 name = names.get_last_name().lower()
-
-data_path = osp.join(root_path, 'data')
 
 experiments_path = osp.join(root_path, 'experiments')
 experiment_path = osp.join(experiments_path, name)

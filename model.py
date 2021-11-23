@@ -56,7 +56,9 @@ class LitMLP(pl.LightningModule):
         tensors, invariants = x
         
         out = invariants
+        print('=======')
         for layer in self.layers:
+            print(out.shape)
             out = layer(out)
             out = self.activation(out)
             
@@ -67,6 +69,8 @@ class LitMLP(pl.LightningModule):
         out = out.reshape((-1, 9))
         
         out = torch.hstack((out[:, 0:1], out[:, 1:2], out[:, 2:3], out[:, 4:5], out[:, 5:6], out[:, 8:9],))
+        print(out.shape)
+        print('******')
             
         return out
     
@@ -74,14 +78,9 @@ class LitMLP(pl.LightningModule):
         return optim.AdamP(self.parameters(), lr=self.lr)
     
     def _common(self, batch: List[torch.Tensor], batch_idx: int, stage: str) -> float:
+        print(stage)
         
-        i_tensors = config.batch_size * 10 * 3 * 3
-        i_invariants = config.batch_size * 47
-        i_labels = config.batch_size * 6
-        
-        tensors = batch[:i_tensors].reshape((config.batch_size, 10, 3, 3))
-        invariants = batch[i_tensors:i_tensors + i_invariants].reshape((config.batch_size, 47))
-        labels = batch[i_tensors + i_invariants:].reshape((config.batch_size, 6))
+        tensors, invariants, labels = batch
         
         # tensors, invariants, labels = batch
         pred = self((tensors, invariants))
@@ -100,7 +99,7 @@ class LitMLP(pl.LightningModule):
         return loss
     
     def validation_step(self, batch: List[torch.Tensor], batch_idx: int):
-        loss = self._common(batch, batch_idx, 'val')
+        loss, _ = self._common(batch, batch_idx, 'val')
         
     def test_step(self, batch: List[torch.Tensor], batch_idx: int):
-        loss = self._common(batch, batch_idx, 'test')
+        loss, _ = self._common(batch, batch_idx, 'test')
