@@ -27,59 +27,103 @@ import os.path as osp
 import pytorch_lightning as pl
 import torch
 
-class Dataset(torch.utils.data.Dataset):
+# class PointwiseDataset(torch.utils.data.TensorDataset):
     
-    def __init__(self, batch_size):
+#     def __init__(self):
         
-        self.batch_size = batch_size 
-        
-        # tensors, invariants, and labels have very different shapes. it poses a problem with the __getitem__ method, that outputs a Tensor. it would be convienient to be able to return a list of Tensors, but the specs are implemented differently, probably for optimization purposes
-        self.tensors = np.load(osp.join(config.processed_dir, 'tensors.npy'))
-        self.invariants = np.load(osp.join(config.processed_dir, 'invariants.npy'))
-        self.labels = np.load(osp.join(config.processed_dir, 'labels.npy'))
+#         # tensors, invariants, and labels have very different shapes. it poses a problem with the __getitem__ method, that outputs a Tensor. it would be convienient to be able to return a list of Tensors, but the specs are implemented differently, probably for optimization purposes
+#         self.tensors = np.load(osp.join(config.processed_dir, 'tensors.npy'))
+#         self.invariants = np.load(osp.join(config.processed_dir, 'invariants.npy'))
+#         self.labels = np.load(osp.join(config.processed_dir, 'labels.npy'))
     
-    def __len__(self):
-        return len(self.tensors)
+#     def __len__(self):
+#         return len(self.tensors)
     
-    def __getitem__(self, idx):
+#     def __getitem__(self, idx):
+#         print(type(idx))
+#         print(idx)
         
-        t = torch.tensor(self.tensors[idx, :])
-        i = torch.tensor(self.invariants[idx, :])
-        l = torch.tensor(self.labels[idx, :])
+#         row = (1, -1)
         
-        return t, i, l
+#         t = torch.tensor(self.tensors[idx, :])
+#         i = torch.tensor(self.invariants[idx, :])
+#         l = torch.tensor(self.labels[idx, :])
+#         return t, i, l
+        
+#         # print(t.shape, i.shape, l.shape)
+#         # concat = torch.cat((t, i, l))
+        
+# #         print('*****')
+# #         print(concat.shape)
+# #         print('*****')
+        
+# #         return t, i, l
+#         # return concat
+
+def load_data():
+    tensors = np.load(osp.join(config.processed_dir, 'tensors.npy'))
+    invariants = np.load(osp.join(config.processed_dir, 'invariants.npy'))
+    labels = np.load(osp.join(config.processed_dir, 'labels.npy'))
+    
+    t = torch.tensor(tensors)
+    i = torch.tensor(invariants)
+    l = torch.tensor(labels)
+    
+    return t, i, l
     
 
-class LitDataModule(pl.LightningDataModule):
+class PointwiseDataModule(pl.LightningDataModule):
     
     def __init__(self, batch_size: int = 128):
         super().__init__()
         self.batch_size = batch_size
+        self.data = load_data()
         
     def prepare_data(self):
-        dataset = Dataset(self.batch_size)
+        dataset = torch.utils.data.TensorDataset(*self.data)
+        # loader = torch.utils.data.DataLoader(dataset, batch_size=16, collate_fn=lambda x: x)
+        # for batch in loader:
+        #     print(len(batch))
+        #     print('*****')
+        #     break
+        # dataset = PointwiseDataset()
         
         size = len(dataset)
         
-        self.test_dataset = dataset[:size // 10]
-        self.val_dataset = dataset[size // 10:size // 5]
-        self.train_dataset = dataset[size // 5:]
+        self.test_dataset = torch.utils.data.TensorDataset(*dataset[:size // 10])
+        self.val_dataset = torch.utils.data.TensorDataset(*dataset[size // 10:size // 5])
+        self.train_dataset = torch.utils.data.TensorDataset(*dataset[size // 5:])
+        
+        # self.test_dataset = torch.utils.data.TensorDataset(*self.data)
+        # loader = torch.utils.data.DataLoader(self.test_dataset, batch_size=8, collate_fn=lambda x: x)
+        # for batch in loader:
+        #     print(len(batch))
+        #     break
         
     def setup(self, stage: str):
-        dataset = Dataset(self.batch_size)
+        dataset = torch.utils.data.TensorDataset(*self.data)
+        # dataset = PointwiseDataset()
+        
+    def _collate_fn(self, batch):
+        return batch
         
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.train_dataset, 
-                                           batch_size=self.batch_size, 
-                                           shuffle=True,
-                                           collate_fn=lambda batch: batch)
+        return torch.utils.data.DataLoader(
+            self.train_dataset, 
+            batch_size=self.batch_size, 
+            collate_fn=lambda x: x
+        )
     
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_dataset, 
-                                           batch_size=self.batch_size,
-                                           collate_fn=lambda batch: batch)
+        return torch.utils.data.DataLoader(
+            self.val_dataset, 
+            batch_size=self.batch_size,
+            collate_fn=lambda x: x
+        )
     
     def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_dataset, 
-                                           batch_size=self.batch_size,
-                                           collate_fn=lambda batch: batch)
+        return torch.utils.data.DataLoader(
+            self.test_dataset, 
+            batch_size=self.batch_size,
+            collate_fn=lambda x: x
+        )

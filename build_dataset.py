@@ -39,7 +39,7 @@ class BuildDatasetFlow(FlowSpec):
         if config.purge:
             for file in os.listdir(config.processed_dir):
                 try:
-                    os.remove(os.path.join(config.processed_dir, file))
+                    os.remove(osp.join(config.processed_dir, file))
                 except:
                     pass
         
@@ -80,12 +80,12 @@ class BuildDatasetFlow(FlowSpec):
         For each use-case, load the data flavors (tensors, invariants and labels) into a NumPy array.
         """
         
-        self.tensors = np.load(os.path.join(config.raw_dir, config.dataset, f'{config.dataset}_{self.input}_Tensors.npy'))
-        self.invariants = np.load(os.path.join(config.raw_dir, config.dataset, f'{config.dataset}_{self.input}_I1.npy'))
+        self.tensors = np.load(osp.join(config.raw_dir, config.dataset, f'{config.dataset}_{self.input}_Tensors.npy'))
+        self.invariants = np.load(osp.join(config.raw_dir, config.dataset, f'{config.dataset}_{self.input}_I1.npy'))
         
         # x = np.hstack((tensors, invariants))
         
-        self.labels = np.load(os.path.join(config.raw_dir, 'labels', f'{self.input}_b.npy'))
+        self.labels = np.load(osp.join(config.raw_dir, 'labels', f'{self.input}_b.npy'))
         self.labels = np.reshape(self.labels, (-1, 9))
         self.labels = np.delete(self.labels, (3, 6, 7), axis=1)
         

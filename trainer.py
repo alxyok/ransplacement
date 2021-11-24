@@ -22,22 +22,53 @@
 
 import config
 import data
+import json
 import model
+import os.path as osp
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import LightningCLI
 import torch
+from typing import List
 
-torch.set_default_dtype(torch.double)
-
-class LitTrainer(pl.Trainer):
-    
-    def __init__(self, accelerator='cpu'):
+class Trainer(pl.Trainer):
+    def __init__(self, 
+                 accelerator: str = 'cpu', 
+                 devices: List[int] = None, 
+                 max_epochs: int = 1000, 
+                 fast_dev_run: int = False, 
+                 callbacks: List[pl.callbacks.Callback] = None):
+        
+        if accelerator == 'cpu':
+            devices = None
+            
         logger = pl.loggers.TensorBoardLogger(config.logs_path, name=None, log_graph=True)
         
         super().__init__(
             default_root_dir=config.logs_path,
-            logger=logger)
-
-cli = LightningCLI(model_class=model.LitMLP, 
-                   datamodule_class=data.LitDataModule,
-                   trainer_class=LitTrainer)
+            logger=logger,
+            accelerator=accelerator,
+            devices=devices,
+            max_epochs=max_epochs,)
+    
+    def test(self, **kwargs):
+        results = super().test(**kwargs)[0]
+        
+        with open(osp.join(config.artifacts_path, "results.json"), "w") as f:
+            json.dump(results, f)
+        
+        torch.save(self.model, osp.join(config.artifacts_path, 'model.pth'))
+        
+def main():
+    
+    cli = LightningCLI(
+        model_class=model.LitMLP, 
+        datamodule_class=data.PointwiseDataModule,
+        trainer_class=Trainer
+    )
+    cli.trainer.test(model=cli.model, datamodule=cli.datamodule)
+    
+    
+if __name__ == '__main__':
+    
+    torch.set_default_dtype(torch.double)
+    main()

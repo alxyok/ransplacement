@@ -32,10 +32,10 @@ from typing import List
 class LitMLP(pl.LightningModule):
     
     def __init__(self, 
-                 in_features: int = 47, 
-                 out_features: int = 10, 
+                 in_feats: int = 47, 
+                 out_feats: int = 10, 
                  num_layers: int = 3, 
-                 hidden_features: int = 20, 
+                 hidden_feats: int = 20, 
                  activation: str = 'selu', 
                  lr: float = 1e-4):
         
@@ -43,46 +43,48 @@ class LitMLP(pl.LightningModule):
         
         self.activation = act.fn(activation)
         self.lr = lr
-        self.out_features = out_features
+        self.out_feats = out_feats
         
         self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(in_features, hidden_features))
-        self.layers.extend([nn.Linear(hidden_features, 
-                                      hidden_features) for _ in range(num_layers)])
-        self.layers.append(nn.Linear(hidden_features, out_features))
+        self.layers.append(nn.Linear(in_feats, hidden_feats))
+        self.layers.extend([nn.Linear(hidden_feats, 
+                                      hidden_feats) for _ in range(num_layers)])
+        self.layers.append(nn.Linear(hidden_feats, out_feats))
         
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
-        
+    
         tensors, invariants = x
         
         out = invariants
-        print('=======')
         for layer in self.layers:
-            print(out.shape)
             out = layer(out)
             out = self.activation(out)
             
-        out = out.reshape((-1, self.out_features, 1, 1))
-        out = out.broadcast_to((out.shape[0], self.out_features, 3, 3))
+        out = out.reshape((-1, self.out_feats, 1, 1))
+        out = out.broadcast_to((out.shape[0], self.out_feats, 3, 3))
         out = out * tensors
         out = out.sum(dim=1)
         out = out.reshape((-1, 9))
-        
+        tensors = tensors.reshape((-1, 1))
         out = torch.hstack((out[:, 0:1], out[:, 1:2], out[:, 2:3], out[:, 4:5], out[:, 5:6], out[:, 8:9],))
-        print(out.shape)
-        print('******')
-            
+        
         return out
     
     def configure_optimizers(self):
         return optim.AdamP(self.parameters(), lr=self.lr)
     
     def _common(self, batch: List[torch.Tensor], batch_idx: int, stage: str) -> float:
-        print(stage)
         
-        tensors, invariants, labels = batch
-        
+        print(len(batch[0]))
+        tensors = torch.stack([x[0] for x in batch])
+        invariants = torch.stack([x[1] for x in batch])
+        labels = torch.stack([x[2] for x in batch])
+        # print(type(batch))
+        # print('*****')
+        # print(len(batch))
+        # print(type(batch[0]))
         # tensors, invariants, labels = batch
+        
         pred = self((tensors, invariants))
         
         loss = F.mean_squared_error(pred, labels)
@@ -95,7 +97,6 @@ class LitMLP(pl.LightningModule):
     
     def training_step(self, batch: List[torch.Tensor], batch_idx: int) -> float:
         loss, _ = self._common(batch, batch_idx, 'train')
-        
         return loss
     
     def validation_step(self, batch: List[torch.Tensor], batch_idx: int):
