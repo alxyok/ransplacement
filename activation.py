@@ -22,7 +22,7 @@
 
 from torch import nn
 
-def fn(name: str = 'relu', *kwargs) -> nn.Module:
+def fn(name: str = 'relu') -> nn.Module:
     
     name = name.lower()
     
