@@ -75,15 +75,9 @@ class LitMLP(pl.LightningModule):
     
     def _common(self, batch: List[torch.Tensor], batch_idx: int, stage: str) -> float:
         
-        print(len(batch[0]))
         tensors = torch.stack([x[0] for x in batch])
         invariants = torch.stack([x[1] for x in batch])
         labels = torch.stack([x[2] for x in batch])
-        # print(type(batch))
-        # print('*****')
-        # print(len(batch))
-        # print(type(batch[0]))
-        # tensors, invariants, labels = batch
         
         pred = self((tensors, invariants))
         
