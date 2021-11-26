@@ -1,14 +1,18 @@
 fit:
     model:
-        in_feats: 47
-        out_feats: 10
-        num_layers: 3
-        hidden_feats: 20
-        activation: 'selu'
-        lr: .0001
+        class_path: model.LitTBNN
+        init_args:
+            in_feats: 47
+            out_feats: 10
+            num_layers: 2
+            hidden_feats: 20
+            activation: 'selu'
+            lr: .0005
 
     data:
-        batch_size: 128
+        class_path: data.PointwiseDataModule
+        init_args:
+            batch_size: 1024
     
     trainer:
         max_epochs: 1000

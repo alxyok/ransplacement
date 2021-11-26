@@ -98,10 +98,22 @@ class BuildDatasetFlow(FlowSpec):
         Join the parallel branches, stack the previously loaded files, and save into a single output file for each of the data flavor.
         """
         
+        import copy
+        
         # merge
         tensors = np.concatenate([input_.tensors for input_ in inputs])
         invariants = np.concatenate([input_.invariants for input_ in inputs])
         labels = np.concatenate([input_.labels for input_ in inputs])
+        
+        if config.shuffle:
+            num_rows = len(tensors)
+            ordered = list(range(num_rows))
+            shuffled = copy.deepcopy(ordered)
+            np.random.shuffle(shuffled)
+            
+            tensors[[ordered]] = tensors[[shuffled]]
+            invariants[[ordered]] = invariants[[shuffled]]
+            labels[[ordered]] = labels[[shuffled]]
         
         # data = np.concatenate((x, y), axis=1)
         np.save(os.path.join(config.processed_dir, 'tensors.npy'), tensors)

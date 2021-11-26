@@ -25,6 +25,7 @@ import numpy as np
 import os
 import os.path as osp
 import pytorch_lightning as pl
+from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 import torch
 
 def load_data():
@@ -38,10 +39,11 @@ def load_data():
     
     return t, i, l
     
-
+    
+@DATAMODULE_REGISTRY
 class PointwiseDataModule(pl.LightningDataModule):
     
-    def __init__(self, batch_size: int = 128):
+    def __init__(self, batch_size: int = 1024):
         super().__init__()
         self.batch_size = batch_size
         self.data = load_data()
@@ -64,7 +66,8 @@ class PointwiseDataModule(pl.LightningDataModule):
         return torch.utils.data.DataLoader(
             self.train_dataset, 
             batch_size=self.batch_size, 
-            collate_fn=self._collate_fn
+            collate_fn=self._collate_fn,
+            shuffle=True
         )
     
     def val_dataloader(self):

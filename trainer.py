@@ -35,6 +35,7 @@ class Trainer(pl.Trainer):
                  accelerator: str = 'cpu', 
                  devices: List[int] = None, 
                  max_epochs: int = 1000, 
+                 gradient_clip_val: int = 1000,
                  fast_dev_run: int = False, 
                  callbacks: List[pl.callbacks.Callback] = None):
         
@@ -60,11 +61,7 @@ class Trainer(pl.Trainer):
         
 def main():
     
-    cli = LightningCLI(
-        model_class=model.LitMLP, 
-        datamodule_class=data.PointwiseDataModule,
-        trainer_class=Trainer
-    )
+    cli = LightningCLI(trainer_class=Trainer)
     cli.trainer.test(model=cli.model, datamodule=cli.datamodule)
     
     

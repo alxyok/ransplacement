@@ -31,6 +31,7 @@ processed_dir = osp.join(data_path, 'processed')
 
 purge = True
 dataset = 'kepsilon'
+shuffle = True
 
 name = names.get_last_name().lower()
 
@@ -48,5 +49,3 @@ paths = [experiments_path,
 
 for path in paths:
     os.makedirs(path, exist_ok=True)
-    
-batch_size = 128

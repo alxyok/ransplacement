@@ -23,13 +23,16 @@
 import activation as act
 import config
 import pytorch_lightning as pl
+from pytorch_lightning.utilities.cli import MODEL_REGISTRY
 import torch
 import torch.nn as nn
-import torch_optimizer as optim
+import torch.optim as optim
 import torchmetrics.functional as F
 from typing import List
 
-class LitMLP(pl.LightningModule):
+
+@MODEL_REGISTRY
+class LitTBNN(pl.LightningModule):
     
     def __init__(self, 
                  in_feats: int = 47, 
@@ -61,17 +64,14 @@ class LitMLP(pl.LightningModule):
             out = self.activation(out)
             
         out = out.reshape((-1, self.out_feats, 1, 1))
-        out = out.broadcast_to((out.shape[0], self.out_feats, 3, 3))
-        out = out * tensors
-        out = out.sum(dim=1)
+        out = torch.einsum('ijkl,ijmn->iklmn', out, tensors)
         out = out.reshape((-1, 9))
-        tensors = tensors.reshape((-1, 1))
         out = torch.hstack((out[:, 0:1], out[:, 1:2], out[:, 2:3], out[:, 4:5], out[:, 5:6], out[:, 8:9],))
         
         return out
     
     def configure_optimizers(self):
-        return optim.AdamP(self.parameters(), lr=self.lr)
+        return optim.NAdam(self.parameters(), lr=self.lr, eps=1e-7)
     
     def _common(self, batch: List[torch.Tensor], batch_idx: int, stage: str) -> float:
         
@@ -82,19 +82,16 @@ class LitMLP(pl.LightningModule):
         pred = self((tensors, invariants))
         
         loss = F.mean_squared_error(pred, labels)
-        r2 = F.r2_score(pred, labels)
-        
         self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True)
-        self.log(f"{stage}_r2", r2, on_step=True)
         
-        return loss, r2
+        return loss
     
     def training_step(self, batch: List[torch.Tensor], batch_idx: int) -> float:
-        loss, _ = self._common(batch, batch_idx, 'train')
+        loss = self._common(batch, batch_idx, 'train')
         return loss
     
     def validation_step(self, batch: List[torch.Tensor], batch_idx: int):
-        loss, _ = self._common(batch, batch_idx, 'val')
+        loss = self._common(batch, batch_idx, 'val')
         
     def test_step(self, batch: List[torch.Tensor], batch_idx: int):
-        loss, _ = self._common(batch, batch_idx, 'test')
+        loss = self._common(batch, batch_idx, 'test')
