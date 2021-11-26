@@ -4,4 +4,4 @@ kaggle == 1.5.12
 metaflow == 2.4.3
 numpy == 1.19.5
 pytorch_lightning == 1.5.1
-torch == 1.9.0
+torch == 1.10.0
